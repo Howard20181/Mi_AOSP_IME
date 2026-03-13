@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="nav_bar_layout_entries" >
+        <item>收起輸入法</item>
+        <item>切換輸入法</item>
+    </string-array>
+</resources>
+

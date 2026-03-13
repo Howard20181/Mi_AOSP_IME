@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:defaultValue="back"
+        android:enabled="false"
+        android:entries="@array/nav_bar_layout_entries"
+        android:entryValues="@array/nav_bar_layout_values"
+        android:key="nav_bar_layout_start"
+        android:persistent="false"
+        android:shouldDisableView="true"
+        android:summary="%s"
+        android:title="@string/nav_bar_layout_start_title" />
+    <ListPreference
+        android:defaultValue="ime_switcher"
+        android:enabled="false"
+        android:entries="@array/nav_bar_layout_entries"
+        android:entryValues="@array/nav_bar_layout_values"
+        android:key="nav_bar_layout_end"
+        android:persistent="false"
+        android:shouldDisableView="true"
+        android:summary="%s"
+        android:title="@string/nav_bar_layout_end_title" />
+
+</PreferenceScreen>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">小米AOSP輸入法全面屏優化</string>
+    <string name="xposed_description">為小米設備啟用AOSP輸入法全面屏優化，同時修復客製化全面屏優化輸入法切換列表</string>
+    <string name="nav_bar_layout_start_title">左側功能鍵</string>
+    <string name="nav_bar_layout_end_title">右側功能鍵</string>
+</resources>
