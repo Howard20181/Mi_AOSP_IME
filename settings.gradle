@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "SystemServiceDebug"
+rootProject.name = "MiAOSPIME"
 include ':MiAOSPIME'
 include ':libxposed-compat'
 include ':hiddenapi'
