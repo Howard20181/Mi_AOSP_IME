@@ -5,6 +5,7 @@ import android.content.Context;
 import android.inputmethodservice.InputMethodService;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
@@ -12,6 +13,7 @@ import androidx.annotation.NonNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.WeakHashMap;
 
 import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
@@ -74,6 +76,11 @@ public class ImeHook extends XposedModule {
                 log(Log.ERROR, TAG, "hook NavigationBarView", e);
             }
             try {
+                hookDeadZone(classLoader);
+            } catch (Exception e) {
+                log(Log.ERROR, TAG, "hook DeadZone", e);
+            }
+            try {
                 hookInputMethodBottomManager(classLoader);
             } catch (Exception e) {
                 log(Log.ERROR, TAG, "hook InputMethodBottomManager", e);
@@ -127,7 +134,14 @@ public class ImeHook extends XposedModule {
         }
     }
 
-    private void hookNavigationBarView(ClassLoader classLoader) {
+    private void hookNavigationBarView(ClassLoader classLoader) throws NoSuchMethodException,
+            ClassNotFoundException {
+        var classNavigationBarView = classLoader.loadClass("android.inputmethodservice.navigationbar.NavigationBarView");
+        var updateOrientationViews = classNavigationBarView.getDeclaredMethod("updateOrientationViews");
+        hook(updateOrientationViews, NavigationBarViewUpdateOrientationViewsHooker.class);
+    }
+
+    private void hookDeadZone(ClassLoader classLoader) {
         try {
             var classDeadZone = classLoader.loadClass("android.inputmethodservice.navigationbar.DeadZone");
             var methodOnConfigurationChanged = classDeadZone.getDeclaredMethod("onConfigurationChanged", int.class);
@@ -138,7 +152,82 @@ public class ImeHook extends XposedModule {
     }
 
     @XposedHooker
+    private static class NavigationBarViewUpdateOrientationViewsHooker implements Hooker {
+        private static final WeakHashMap<View, int[]> BASE_PADDINGS = new WeakHashMap<>();
+        private static final WeakHashMap<View, int[]> ROUNDED_CORNER_STATE = new WeakHashMap<>();
+        private static final int ZERO_ROUNDED_GRACE_CALLBACKS = 1;
+
+        @AfterInvocation
+        public static void after(@NonNull AfterHookCallback callback) {
+            var obj = callback.getThisObject();
+            if (obj == null) return;
+            try {
+                var fHorizontal = obj.getClass().getDeclaredField("mHorizontal");
+                fHorizontal.setAccessible(true);
+                var horizontalObj = fHorizontal.get(obj);
+                if (!(horizontalObj instanceof View horizontalView)) return;
+                horizontalView.setOnApplyWindowInsetsListener((v, insets) -> {
+                    var basePadding = BASE_PADDINGS.computeIfAbsent(v, x -> new int[]{
+                            x.getPaddingLeft(),
+                            x.getPaddingTop(),
+                            x.getPaddingRight(),
+                            x.getPaddingBottom()
+                    });
+                    var roundedState = ROUNDED_CORNER_STATE.computeIfAbsent(v, x -> new int[]{0, 0, 0});
+
+                    var cutout = insets.getDisplayCutout();
+                    int safeLeft = 0;
+                    int safeRight = 0;
+                    int waterfallLeft = 0;
+                    int waterfallRight = 0;
+                    if (cutout != null) {
+                        safeLeft = cutout.getSafeInsetLeft();
+                        safeRight = cutout.getSafeInsetRight();
+                        var waterfall = cutout.getWaterfallInsets();
+                        waterfallLeft = waterfall.left;
+                        waterfallRight = waterfall.right;
+                    }
+
+                    var bottomLeft = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_BOTTOM_LEFT);
+                    var bottomRight = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_BOTTOM_RIGHT);
+                    int bottomLeftRadius = bottomLeft != null ? bottomLeft.getRadius() : 0;
+                    int bottomRightRadius = bottomRight != null ? bottomRight.getRadius() : 0;
+
+                    int roundedLeftUsed = bottomLeftRadius;
+                    int roundedRightUsed = bottomRightRadius;
+                    if (bottomLeftRadius == 0 && bottomRightRadius == 0) {
+                        roundedState[2] += 1;
+                        if (roundedState[2] <= ZERO_ROUNDED_GRACE_CALLBACKS) {
+                            roundedLeftUsed = roundedState[0];
+                            roundedRightUsed = roundedState[1];
+                        } else {
+                            roundedState[0] = 0;
+                            roundedState[1] = 0;
+                        }
+                    } else {
+                        roundedState[0] = bottomLeftRadius;
+                        roundedState[1] = bottomRightRadius;
+                        roundedState[2] = 0;
+                    }
+
+                    int candidateLeft = Math.max(Math.max(safeLeft, waterfallLeft), roundedLeftUsed);
+                    int candidateRight = Math.max(Math.max(safeRight, waterfallRight), roundedRightUsed);
+
+                    int appliedLeft = basePadding[0] + candidateLeft;
+                    int appliedRight = basePadding[2] + candidateRight;
+                    v.setPadding(appliedLeft, basePadding[1], appliedRight, basePadding[3]);
+
+                    return insets;
+                });
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                module.log(Log.ERROR, TAG, "NavigationBarViewUpdateOrientationViewsHooker", e);
+            }
+        }
+    }
+
+    @XposedHooker
     private static class DeadZoneOnConfigurationChangedHooker implements Hooker {
+
         @AfterInvocation
         public static void after(@NonNull AfterHookCallback callback) {
             try {
@@ -146,18 +235,6 @@ public class ImeHook extends XposedModule {
                 if (obj == null) return;
                 var fSizeMin = obj.getClass().getDeclaredField("mSizeMin");
                 fSizeMin.setAccessible(true);
-                int sizeMin = fSizeMin.getInt(obj);
-                var fNavView = obj.getClass().getDeclaredField("mNavigationBarView");
-                fNavView.setAccessible(true);
-                if (fNavView.get(obj) instanceof android.view.View navView) {
-                    navView.setPadding(
-                            navView.getPaddingLeft(),
-                            navView.getPaddingTop(),
-                            navView.getPaddingRight(),
-                            sizeMin
-                    );
-                }
-
                 fSizeMin.setInt(obj, 0);
             } catch (Exception e) {
                 module.log(Log.ERROR, TAG, "DeadZoneOnConfigurationChangedHooker", e);
