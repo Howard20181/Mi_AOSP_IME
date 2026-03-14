@@ -35,7 +35,6 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Write key
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

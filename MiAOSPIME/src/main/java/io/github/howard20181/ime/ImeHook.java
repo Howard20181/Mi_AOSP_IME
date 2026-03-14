@@ -5,6 +5,7 @@ import android.content.Context;
 import android.inputmethodservice.InputMethodService;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.RoundedCorner;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
@@ -164,61 +165,61 @@ public class ImeHook extends XposedModule {
             try {
                 var fHorizontal = obj.getClass().getDeclaredField("mHorizontal");
                 fHorizontal.setAccessible(true);
-                var horizontalObj = fHorizontal.get(obj);
-                if (!(horizontalObj instanceof View horizontalView)) return;
-                horizontalView.setOnApplyWindowInsetsListener((v, insets) -> {
-                    var basePadding = BASE_PADDINGS.computeIfAbsent(v, x -> new int[]{
-                            x.getPaddingLeft(),
-                            x.getPaddingTop(),
-                            x.getPaddingRight(),
-                            x.getPaddingBottom()
-                    });
-                    var roundedState = ROUNDED_CORNER_STATE.computeIfAbsent(v, x -> new int[]{0, 0, 0});
+                if (fHorizontal.get(obj) instanceof View horizontalView) {
+                    horizontalView.setOnApplyWindowInsetsListener((v, insets) -> {
+                        var basePadding = BASE_PADDINGS.computeIfAbsent(v, x -> new int[]{
+                                x.getPaddingLeft(),
+                                x.getPaddingTop(),
+                                x.getPaddingRight(),
+                                x.getPaddingBottom()
+                        });
+                        var roundedState = ROUNDED_CORNER_STATE.computeIfAbsent(v, x -> new int[]{0, 0, 0});
 
-                    var cutout = insets.getDisplayCutout();
-                    int safeLeft = 0;
-                    int safeRight = 0;
-                    int waterfallLeft = 0;
-                    int waterfallRight = 0;
-                    if (cutout != null) {
-                        safeLeft = cutout.getSafeInsetLeft();
-                        safeRight = cutout.getSafeInsetRight();
-                        var waterfall = cutout.getWaterfallInsets();
-                        waterfallLeft = waterfall.left;
-                        waterfallRight = waterfall.right;
-                    }
-
-                    var bottomLeft = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_BOTTOM_LEFT);
-                    var bottomRight = insets.getRoundedCorner(android.view.RoundedCorner.POSITION_BOTTOM_RIGHT);
-                    int bottomLeftRadius = bottomLeft != null ? bottomLeft.getRadius() : 0;
-                    int bottomRightRadius = bottomRight != null ? bottomRight.getRadius() : 0;
-
-                    int roundedLeftUsed = bottomLeftRadius;
-                    int roundedRightUsed = bottomRightRadius;
-                    if (bottomLeftRadius == 0 && bottomRightRadius == 0) {
-                        roundedState[2] += 1;
-                        if (roundedState[2] <= ZERO_ROUNDED_GRACE_CALLBACKS) {
-                            roundedLeftUsed = roundedState[0];
-                            roundedRightUsed = roundedState[1];
-                        } else {
-                            roundedState[0] = 0;
-                            roundedState[1] = 0;
+                        var cutout = insets.getDisplayCutout();
+                        int safeLeft = 0;
+                        int safeRight = 0;
+                        int waterfallLeft = 0;
+                        int waterfallRight = 0;
+                        if (cutout != null) {
+                            safeLeft = cutout.getSafeInsetLeft();
+                            safeRight = cutout.getSafeInsetRight();
+                            var waterfall = cutout.getWaterfallInsets();
+                            waterfallLeft = waterfall.left;
+                            waterfallRight = waterfall.right;
                         }
-                    } else {
-                        roundedState[0] = bottomLeftRadius;
-                        roundedState[1] = bottomRightRadius;
-                        roundedState[2] = 0;
-                    }
 
-                    int candidateLeft = Math.max(Math.max(safeLeft, waterfallLeft), roundedLeftUsed);
-                    int candidateRight = Math.max(Math.max(safeRight, waterfallRight), roundedRightUsed);
+                        var bottomLeft = insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT);
+                        var bottomRight = insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT);
+                        int bottomLeftRadius = bottomLeft != null ? bottomLeft.getRadius() : 0;
+                        int bottomRightRadius = bottomRight != null ? bottomRight.getRadius() : 0;
 
-                    int appliedLeft = basePadding[0] + candidateLeft;
-                    int appliedRight = basePadding[2] + candidateRight;
-                    v.setPadding(appliedLeft, basePadding[1], appliedRight, basePadding[3]);
+                        int roundedLeftUsed = bottomLeftRadius;
+                        int roundedRightUsed = bottomRightRadius;
+                        if (bottomLeftRadius == 0 && bottomRightRadius == 0) {
+                            roundedState[2] += 1;
+                            if (roundedState[2] <= ZERO_ROUNDED_GRACE_CALLBACKS) {
+                                roundedLeftUsed = roundedState[0];
+                                roundedRightUsed = roundedState[1];
+                            } else {
+                                roundedState[0] = 0;
+                                roundedState[1] = 0;
+                            }
+                        } else {
+                            roundedState[0] = bottomLeftRadius;
+                            roundedState[1] = bottomRightRadius;
+                            roundedState[2] = 0;
+                        }
 
-                    return insets;
-                });
+                        int candidateLeft = Math.max(Math.max(safeLeft, waterfallLeft), roundedLeftUsed);
+                        int candidateRight = Math.max(Math.max(safeRight, waterfallRight), roundedRightUsed);
+
+                        int appliedLeft = basePadding[0] + candidateLeft;
+                        int appliedRight = basePadding[2] + candidateRight;
+                        v.setPadding(appliedLeft, basePadding[1], appliedRight, basePadding[3]);
+
+                        return insets;
+                    });
+                }
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 module.log(Log.ERROR, TAG, "NavigationBarViewUpdateOrientationViewsHooker", e);
             }
