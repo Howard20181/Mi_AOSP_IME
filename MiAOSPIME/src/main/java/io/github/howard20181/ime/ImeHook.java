@@ -2,6 +2,7 @@ package io.github.howard20181.ime;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.inputmethodservice.InputMethodService;
 import android.util.Log;
 import android.util.TypedValue;
@@ -155,8 +156,6 @@ public class ImeHook extends XposedModule {
     @XposedHooker
     private static class NavigationBarViewUpdateOrientationViewsHooker implements Hooker {
         private static final WeakHashMap<View, int[]> BASE_PADDINGS = new WeakHashMap<>();
-        private static final WeakHashMap<View, int[]> ROUNDED_CORNER_STATE = new WeakHashMap<>();
-        private static final int ZERO_ROUNDED_GRACE_CALLBACKS = 1;
 
         @AfterInvocation
         public static void after(@NonNull AfterHookCallback callback) {
@@ -166,57 +165,22 @@ public class ImeHook extends XposedModule {
                 var fHorizontal = obj.getClass().getDeclaredField("mHorizontal");
                 fHorizontal.setAccessible(true);
                 if (fHorizontal.get(obj) instanceof View horizontalView) {
+                    var shadow = dpToPx(4, horizontalView.getResources());
                     horizontalView.setOnApplyWindowInsetsListener((v, insets) -> {
                         var basePadding = BASE_PADDINGS.computeIfAbsent(v, x -> new int[]{
-                                x.getPaddingLeft(),
+                                x.getPaddingLeft() + shadow,
                                 x.getPaddingTop(),
-                                x.getPaddingRight(),
+                                x.getPaddingRight() + shadow,
                                 x.getPaddingBottom()
                         });
-                        var roundedState = ROUNDED_CORNER_STATE.computeIfAbsent(v, x -> new int[]{0, 0, 0});
-
-                        var cutout = insets.getDisplayCutout();
-                        int safeLeft = 0;
-                        int safeRight = 0;
-                        int waterfallLeft = 0;
-                        int waterfallRight = 0;
-                        if (cutout != null) {
-                            safeLeft = cutout.getSafeInsetLeft();
-                            safeRight = cutout.getSafeInsetRight();
-                            var waterfall = cutout.getWaterfallInsets();
-                            waterfallLeft = waterfall.left;
-                            waterfallRight = waterfall.right;
-                        }
-
                         var bottomLeft = insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT);
                         var bottomRight = insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT);
-                        int bottomLeftRadius = bottomLeft != null ? bottomLeft.getRadius() : 0;
-                        int bottomRightRadius = bottomRight != null ? bottomRight.getRadius() : 0;
-
-                        int roundedLeftUsed = bottomLeftRadius;
-                        int roundedRightUsed = bottomRightRadius;
-                        if (bottomLeftRadius == 0 && bottomRightRadius == 0) {
-                            roundedState[2] += 1;
-                            if (roundedState[2] <= ZERO_ROUNDED_GRACE_CALLBACKS) {
-                                roundedLeftUsed = roundedState[0];
-                                roundedRightUsed = roundedState[1];
-                            } else {
-                                roundedState[0] = 0;
-                                roundedState[1] = 0;
-                            }
-                        } else {
-                            roundedState[0] = bottomLeftRadius;
-                            roundedState[1] = bottomRightRadius;
-                            roundedState[2] = 0;
-                        }
-
-                        int candidateLeft = Math.max(Math.max(safeLeft, waterfallLeft), roundedLeftUsed);
-                        int candidateRight = Math.max(Math.max(safeRight, waterfallRight), roundedRightUsed);
-
-                        int appliedLeft = basePadding[0] + candidateLeft;
-                        int appliedRight = basePadding[2] + candidateRight;
-                        v.setPadding(appliedLeft, basePadding[1], appliedRight, basePadding[3]);
-
+                        int radiusBottomLeft = bottomLeft != null ? bottomLeft.getRadius() : 0;
+                        int radiusBottomRight = bottomRight != null ? bottomRight.getRadius() : 0;
+                        v.setPadding(radiusBottomLeft > 0 ? radiusBottomLeft - basePadding[0] : basePadding[0],
+                                basePadding[1],
+                                radiusBottomRight > 0 ? radiusBottomRight - basePadding[2] : basePadding[2],
+                                basePadding[3]);
                         return insets;
                     });
                 }
@@ -243,6 +207,10 @@ public class ImeHook extends XposedModule {
         }
     }
 
+    private static int dpToPx(int data, Resources res) {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, data, res.getDisplayMetrics()));
+    }
+
     private static class GetImeCaptionBarHeightHooker implements Hooker {
 
         @BeforeInvocation
@@ -251,11 +219,7 @@ public class ImeHook extends XposedModule {
                 try {
                     var mService = mInputMethodService.get(callback.getThisObject());
                     if (mService instanceof InputMethodService inputMethodService) {
-                        var imeCaptionBarHeight = Math.round(TypedValue.applyDimension(
-                                TypedValue.COMPLEX_UNIT_DIP,
-                                48,
-                                inputMethodService.getResources().getDisplayMetrics()
-                        ));
+                        var imeCaptionBarHeight = dpToPx(48, inputMethodService.getResources());
                         callback.returnAndSkip(imeCaptionBarHeight);
                     }
                 } catch (IllegalAccessException e) {
@@ -311,7 +275,8 @@ public class ImeHook extends XposedModule {
         hook(methodIsCallingBetweenCustomIME, IsCallingBetweenCustomIMEHooker.class);
     }
 
-    private void hookInputMethodBottomManager(ClassLoader classLoader) throws NoSuchMethodException,
+    private void hookInputMethodBottomManager(ClassLoader classLoader) throws
+            NoSuchMethodException,
             ClassNotFoundException {
         var classInputMethodModuleManager = classLoader.loadClass("android.inputmethodservice.InputMethodModuleManager");
         var methodLoadDex = classInputMethodModuleManager.getDeclaredMethod("loadDex",

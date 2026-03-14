@@ -10,7 +10,7 @@ android {
         minSdkVersion 34
         targetSdkVersion 36
         versionCode rootProject.ext.commitCount
-        versionName "1.1.0"
+        versionName "1.1.1"
     }
 
     Properties localProperties = new Properties()
@@ -98,5 +98,19 @@ tasks.register('applyXposedRelease', Exec) {
     group "xposed"
     dependsOn "installRelease"
     commandLine "adb", "shell", "svc", "power", "reboot"
+    ignoreExitValue = true
+}
+
+tasks.register('applyXposedImeDebug', Exec) {
+    group "xposed"
+    dependsOn "installDebug"
+    commandLine "adb", "shell", "am", "force-stop", "com.google.android.inputmethod.latin"
+    ignoreExitValue = true
+}
+
+tasks.register('applyXposedImeRelease', Exec) {
+    group "xposed"
+    dependsOn "installRelease"
+    commandLine "adb", "shell", "am", "force-stop", "com.google.android.inputmethod.latin"
     ignoreExitValue = true
 }
