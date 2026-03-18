@@ -3,6 +3,8 @@ package bridge;
 import android.annotation.NonNull;
 import android.app.Notification;
 import android.content.Context;
+import android.content.om.OverlayInfo;
+import android.content.om.OverlayManager;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -11,6 +13,7 @@ import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.UserHandle;
 import android.service.notification.StatusBarNotification;
+import android.view.WindowInsetsController;
 
 public class HiddenApiBridge {
     public static Context StatusBarNotification_getPackageContext(@NonNull StatusBarNotification sbn, @NonNull Context systenUiContext) {
@@ -61,8 +64,16 @@ public class HiddenApiBridge {
         return icon.getUri();
     }
 
+    public static UserHandle UserHandle_CURRENT() {
+        return UserHandle.CURRENT;
+    }
+
     public static int UserHandle_getIdentifier(UserHandle userHandle) {
         return userHandle.getIdentifier();
+    }
+
+    public static int UserHandle_myUserId() {
+        return UserHandle.myUserId();
     }
 
     public static ApplicationInfo PackageManager_getApplicationInfoAsUser(PackageManager pm, String packageName,
@@ -73,5 +84,23 @@ public class HiddenApiBridge {
     public static Context Context_createApplicationContext(Context context, ApplicationInfo application,
                                                            int flags) {
         return context.createApplicationContext(application, flags);
+    }
+
+    public static void WindowInsetsController_setCaptionInsetsHeight(WindowInsetsController controller, int height) {
+        controller.setCaptionInsetsHeight(height);
+    }
+
+    public static void OverlayManager_setEnabled(OverlayManager overlayManager, @NonNull final String packageName, final boolean enable,
+                                                 @NonNull UserHandle user) {
+        overlayManager.setEnabled(packageName, enable, user);
+    }
+
+    public static OverlayInfo OverlayManager_getOverlayInfo(OverlayManager overlayManager, @NonNull final String packageName,
+                                                            @NonNull final UserHandle userHandle) {
+        return overlayManager.getOverlayInfo(packageName, userHandle);
+    }
+
+    public static boolean OverlayInfo_isEnabled(OverlayInfo overlayInfo) {
+        return overlayInfo.isEnabled();
     }
 }

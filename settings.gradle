@@ -22,7 +22,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "MiAOSPIME"
 include ':MiAOSPIME'
-include ':libxposed-compat'
 include ':hiddenapi'
 include ':hiddenapi:stubs'
 include ':hiddenapi:bridge'
