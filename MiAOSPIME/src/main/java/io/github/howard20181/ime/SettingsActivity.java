@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import io.github.libxposed.service.XposedService;
 
 public class SettingsActivity extends Activity {
+    private static XposedService mService = null;
     public static final String BACK = "back";
     public static final String HOME_HANDLE = "home_handle";
     public static final String IME_SWITCHER = "ime_switcher";
@@ -33,20 +34,8 @@ public class SettingsActivity extends Activity {
         private ListPreference startPref;
         private ListPreference endPref;
 
-        private final App.ServiceStateListener serviceStateListener = service -> {
-            Activity activity = getActivity();
-            if (activity == null) {
-                return;
-            }
-            activity.runOnUiThread(() -> {
-                if (!isAdded()) {
-                    return;
-                }
-                applyServiceStateToPrefs(service);
-            });
-        };
-
         private void applyServiceStateToPrefs(XposedService service) {
+            mService = service;
             if (startPref == null || endPref == null) {
                 return;
             }
@@ -72,9 +61,9 @@ public class SettingsActivity extends Activity {
         }
 
         private void pushRemoteConfig(String changedKey, String newValue) {
-            if (App.mService == null) return;
+            if (mService == null) return;
 
-            var remotePrefs = App.mService.getRemotePreferences("conf");
+            var remotePrefs = mService.getRemotePreferences("conf");
 
             String start = startPref != null ? startPref.getValue() : BACK;
             String end = endPref != null ? endPref.getValue() : IME_SWITCHER;
