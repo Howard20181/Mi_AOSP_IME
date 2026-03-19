@@ -234,13 +234,13 @@ public class ImeHook extends XposedModule {
         try {
             var classDeadZone = classLoader.loadClass("android.inputmethodservice.navigationbar.DeadZone");
             var fSizeMin = classDeadZone.getDeclaredField("mSizeMin");
+            fSizeMin.setAccessible(true);
             var methodOnConfigurationChanged = classDeadZone.getDeclaredMethod("onConfigurationChanged", int.class);
             hook(methodOnConfigurationChanged).intercept(chain -> {
                 var result = chain.proceed();
                 try {
                     var obj = chain.getThisObject();
                     if (obj == null) return result;
-                    fSizeMin.setAccessible(true);
                     fSizeMin.setInt(obj, 0);
                 } catch (Exception e) {
                     log(Log.ERROR, TAG, "hook DeadZone.onConfigurationChanged", e);
