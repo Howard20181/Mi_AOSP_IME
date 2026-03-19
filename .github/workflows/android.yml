@@ -27,7 +27,6 @@ jobs:
         with:
           repository: libxposed/service
           path: libxposed/service
-          ref: rfc
           fetch-depth: 0
 
       - name: set up JDK 21
