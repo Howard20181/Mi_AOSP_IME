@@ -107,7 +107,6 @@ public class ImeHook extends XposedModule {
                 try {
                     var classInputMethodServiceStub = classLoader.loadClass("android.inputmethodservice.InputMethodServiceStub");
                     var methodInputMethodServiceStubGetInstance = classInputMethodServiceStub.getDeclaredMethod("getInstance");
-                    getInvoker(methodInputMethodServiceStubGetInstance).invoke(chain.getThisObject());
                     var InputMethodServiceInjector = getInvoker(methodInputMethodServiceStubGetInstance).invoke(chain.getThisObject());
                     if (InputMethodServiceInjector != null) {
                         var methodIsImeSupport = InputMethodServiceInjector.getClass().getDeclaredMethod("isImeSupport", Context.class);
