@@ -275,7 +275,12 @@ public class ImeHook extends XposedModule {
         hook(methodGetInputMethodNavButtonFlagsLocked).intercept(chain -> {
             try {
                 var mImeDrawsImeNavBarRes = fieldImeDrawsImeNavBarRes.get(chain.getThisObject());
-                var mImeDrawsImeNavBar = (AtomicBoolean) fieldValueRefOverlayableSystemBooleanResourceWrapper.get(mImeDrawsImeNavBarRes);
+                Object valueRef = fieldValueRefOverlayableSystemBooleanResourceWrapper.get(mImeDrawsImeNavBarRes);
+                if (!(valueRef instanceof AtomicBoolean)) {
+                    log(Log.WARN, TAG, "mValueRef is not an AtomicBoolean; skipping nav bar flag adjustment");
+                    return chain.proceed();
+                }
+                var mImeDrawsImeNavBar = (AtomicBoolean) valueRef;
                 if (mImeDrawsImeNavBar != null) {
                     var InputMethodManagerServiceImpl = getInvoker(methodInputMethodManagerServiceStubGetInstance).invoke(chain.getThisObject());
                     if (InputMethodManagerServiceImpl != null) {
