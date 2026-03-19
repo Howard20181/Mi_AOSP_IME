@@ -33,9 +33,10 @@ public class SettingsActivity extends Activity {
     public static class SettingsFragment extends PreferenceFragment implements App.ServiceStateListener {
         private ListPreference startPref;
         private ListPreference endPref;
+        private XposedService mService;
 
         private void applyServiceStateToPrefs(XposedService service) {
-            mService = service;
+            this.mService = service;
             if (startPref == null || endPref == null) {
                 return;
             }
