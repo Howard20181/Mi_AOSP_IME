@@ -275,37 +275,31 @@ public class ImeHook extends XposedModule {
         hook(methodGetInputMethodNavButtonFlagsLocked).intercept(chain -> {
             try {
                 var mImeDrawsImeNavBarRes = fieldImeDrawsImeNavBarRes.get(chain.getThisObject());
-                Object valueRef = fieldValueRefOverlayableSystemBooleanResourceWrapper.get(mImeDrawsImeNavBarRes);
-                if (!(valueRef instanceof AtomicBoolean)) {
-                    log(Log.WARN, TAG, "mValueRef is not an AtomicBoolean; skipping nav bar flag adjustment");
-                    return chain.proceed();
-                }
-                var mImeDrawsImeNavBar = (AtomicBoolean) valueRef;
-                if (mImeDrawsImeNavBar != null) {
-                    var InputMethodManagerServiceImpl = getInvoker(methodInputMethodManagerServiceStubGetInstance).invoke(chain.getThisObject());
-                    if (InputMethodManagerServiceImpl != null) {
-                        var methodIsCustomizedInputMethod = InputMethodManagerServiceImpl.getClass().getDeclaredMethod("isCustomizedInputMethod", String.class);
-                        methodIsCustomizedInputMethod.setAccessible(true);
-                        var mSettings = fieldSettings.get(chain.getThisObject());
-                        if (mSettings != null && fContext.get(chain.getThisObject()) instanceof Context mContext) {
-                            var getSelectedInputMethod = mSettings.getClass().getDeclaredMethod("getSelectedInputMethod");
-                            getSelectedInputMethod.setAccessible(true);
-                            var isGesturesNav = Settings.Secure.getInt(mContext.getContentResolver(), "navigation_mode", 2) == 2;
-                            var canImeDrawsImeNavBar = isGesturesNav && getInvoker(methodIsCustomizedInputMethod).invoke(InputMethodManagerServiceImpl,
-                                    getSelectedInputMethod.invoke(mSettings)) instanceof Boolean isCustomizedInputMethod && !isCustomizedInputMethod;
-                            try {
-                                if (mContext.getSystemService(Context.OVERLAY_SERVICE) instanceof OverlayManager overlayManager) {
-                                    var overlayInfo = HiddenApiBridge.OverlayManager_getOverlayInfo(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, HiddenApiBridge.UserHandle_CURRENT());
-                                    if (overlayInfo != null) {
-                                        var enabled = HiddenApiBridge.OverlayInfo_isEnabled(overlayInfo);
-                                        if (enabled != canImeDrawsImeNavBar) {
-                                            HiddenApiBridge.OverlayManager_setEnabled(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, canImeDrawsImeNavBar, HiddenApiBridge.UserHandle_CURRENT());
-                                        }
+                var InputMethodManagerServiceImpl = getInvoker(methodInputMethodManagerServiceStubGetInstance).invoke(chain.getThisObject());
+                if (InputMethodManagerServiceImpl != null) {
+                    var methodIsCustomizedInputMethod = InputMethodManagerServiceImpl.getClass().getDeclaredMethod("isCustomizedInputMethod", String.class);
+                    methodIsCustomizedInputMethod.setAccessible(true);
+                    var mSettings = fieldSettings.get(chain.getThisObject());
+                    if (mSettings != null && fContext.get(chain.getThisObject()) instanceof Context mContext) {
+                        var getSelectedInputMethod = mSettings.getClass().getDeclaredMethod("getSelectedInputMethod");
+                        getSelectedInputMethod.setAccessible(true);
+                        var isGesturesNav = Settings.Secure.getInt(mContext.getContentResolver(), "navigation_mode", 2) == 2;
+                        var canImeDrawsImeNavBar = isGesturesNav && getInvoker(methodIsCustomizedInputMethod).invoke(InputMethodManagerServiceImpl,
+                                getSelectedInputMethod.invoke(mSettings)) instanceof Boolean isCustomizedInputMethod && !isCustomizedInputMethod;
+                        try {
+                            if (mContext.getSystemService(Context.OVERLAY_SERVICE) instanceof OverlayManager overlayManager) {
+                                var overlayInfo = HiddenApiBridge.OverlayManager_getOverlayInfo(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, HiddenApiBridge.UserHandle_CURRENT());
+                                if (overlayInfo != null) {
+                                    var enabled = HiddenApiBridge.OverlayInfo_isEnabled(overlayInfo);
+                                    if (enabled != canImeDrawsImeNavBar) {
+                                        HiddenApiBridge.OverlayManager_setEnabled(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, canImeDrawsImeNavBar, HiddenApiBridge.UserHandle_CURRENT());
                                     }
                                 }
-                            } catch (SecurityException | IllegalStateException e) {
-                                log(Log.ERROR, TAG, "Failed to toggle gestural nav overlay", e);
                             }
+                        } catch (SecurityException | IllegalStateException e) {
+                            log(Log.ERROR, TAG, "Failed to toggle gestural nav overlay", e);
+                        }
+                        if (fieldValueRefOverlayableSystemBooleanResourceWrapper.get(mImeDrawsImeNavBarRes) instanceof AtomicBoolean mImeDrawsImeNavBar) {
                             mImeDrawsImeNavBar.set(canImeDrawsImeNavBar);
                         }
                     }

@@ -1,10 +1,7 @@
 package android.os;
 
-import android.annotation.NonNull;
-
 public final class UserHandle {
-    public static final int USER_CURRENT = -2;
-    public static final @NonNull UserHandle CURRENT = new UserHandle(USER_CURRENT);
+    public static final UserHandle CURRENT = null;
 
     public UserHandle(int h) {
         throw new RuntimeException("STUB");
