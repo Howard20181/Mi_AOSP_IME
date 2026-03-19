@@ -1,11 +1,14 @@
 package io.github.howard20181.ime;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
 
 import androidx.annotation.Nullable;
+
+import io.github.libxposed.service.XposedService;
 
 public class SettingsActivity extends Activity {
     public static final String BACK = "back";
@@ -17,6 +20,7 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
         setContentView(R.layout.settings);
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
@@ -24,9 +28,29 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    public static class SettingsFragment extends PreferenceFragment {
+    public static class SettingsFragment extends PreferenceFragment implements App.ServiceStateListener {
         private ListPreference startPref;
         private ListPreference endPref;
+        private XposedService mService;
+
+        private void applyServiceStateToPrefs(XposedService service) {
+            this.mService = service;
+            if (startPref == null || endPref == null) {
+                return;
+            }
+
+            if (service == null) {
+                startPref.setEnabled(false);
+                endPref.setEnabled(false);
+                return;
+            }
+
+            var remotePrefs = service.getRemotePreferences("conf");
+            startPref.setValue(remotePrefs.getString("nav_bar_layout_start", BACK));
+            startPref.setEnabled(true);
+            endPref.setValue(remotePrefs.getString("nav_bar_layout_end", IME_SWITCHER));
+            endPref.setEnabled(true);
+        }
 
         private String computeNavBarLayoutHandle(String start, String end) {
             if (!start.isBlank() && !end.isBlank()) {
@@ -36,9 +60,9 @@ public class SettingsActivity extends Activity {
         }
 
         private void pushRemoteConfig(String changedKey, String newValue) {
-            if (App.mService == null) return;
+            if (mService == null) return;
 
-            var remotePrefs = App.mService.getRemotePreferences("conf");
+            var remotePrefs = mService.getRemotePreferences("conf");
 
             String start = startPref != null ? startPref.getValue() : BACK;
             String end = endPref != null ? endPref.getValue() : IME_SWITCHER;
@@ -53,27 +77,6 @@ public class SettingsActivity extends Activity {
                     .putString(changedKey, newValue)
                     .putString("nav_bar_layout_handle", computeNavBarLayoutHandle(start, end))
                     .apply();
-        }
-
-        private void processServiceBind() {
-            if (App.mService != null) {
-                var remotePrefs = App.mService.getRemotePreferences("conf");
-                if (startPref != null) {
-                    startPref.setValue(remotePrefs.getString("nav_bar_layout_start", BACK));
-                    startPref.setEnabled(true);
-                }
-                if (endPref != null) {
-                    endPref.setValue(remotePrefs.getString("nav_bar_layout_end", IME_SWITCHER));
-                    endPref.setEnabled(true);
-                }
-            } else {
-                if (startPref != null) {
-                    startPref.setEnabled(false);
-                }
-                if (endPref != null) {
-                    endPref.setEnabled(false);
-                }
-            }
         }
 
         @Override
@@ -100,9 +103,20 @@ public class SettingsActivity extends Activity {
         }
 
         @Override
-        public void onResume() {
-            super.onResume();
-            processServiceBind();
+        public void onStart() {
+            super.onStart();
+            App.addServiceStateListener(this, true);
+        }
+
+        @Override
+        public void onStop() {
+            App.removeServiceStateListener(this);
+            super.onStop();
+        }
+
+        @Override
+        public void onServiceStateChanged(@Nullable XposedService service) {
+            applyServiceStateToPrefs(service);
         }
     }
 }

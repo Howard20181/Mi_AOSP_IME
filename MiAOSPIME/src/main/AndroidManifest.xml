@@ -10,7 +10,8 @@
         tools:ignore="AllowBackup,MissingApplicationIcon">
         <activity
             android:name=".SettingsActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.Settings">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
