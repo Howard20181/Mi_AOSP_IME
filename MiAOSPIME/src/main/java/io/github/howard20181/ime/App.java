@@ -3,7 +3,6 @@ package io.github.howard20181.ime;
 import android.app.Application;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,13 +20,11 @@ public class App extends Application implements XposedServiceHelper.OnServiceLis
     public void onServiceBind(@NonNull XposedService service) {
         mService = service;
         notifyServiceStateChanged(mService);
-        Log.d("ImeApp", "XposedService bound: " + service);
     }
 
     @Override
     public void onServiceDied(@NonNull XposedService service) {
         mService = null;
-        Log.d("ImeApp", "XposedService died: " + service);
         notifyServiceStateChanged(mService);
     }
 

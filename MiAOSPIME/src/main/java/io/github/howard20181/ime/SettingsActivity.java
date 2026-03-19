@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -117,7 +116,6 @@ public class SettingsActivity extends Activity {
 
         @Override
         public void onServiceStateChanged(@Nullable XposedService service) {
-            Log.d("SettingsFragment", "onServiceStateChanged: " + service);
             applyServiceStateToPrefs(service);
         }
     }
