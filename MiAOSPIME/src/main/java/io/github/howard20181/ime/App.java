@@ -15,6 +15,8 @@ import io.github.libxposed.service.XposedService;
 import io.github.libxposed.service.XposedServiceHelper;
 
 public class App extends Application implements XposedServiceHelper.OnServiceListener {
+    private volatile static XposedService mService = null;
+
     @Override
     public void onServiceBind(@NonNull XposedService service) {
         mService = service;
@@ -35,8 +37,6 @@ public class App extends Application implements XposedServiceHelper.OnServiceLis
 
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
     private static final Set<ServiceStateListener> SERVICE_STATE_LISTENERS = new CopyOnWriteArraySet<>();
-
-    private volatile static XposedService mService = null;
 
     public static void addServiceStateListener(@NonNull ServiceStateListener listener,
                                                boolean notifyImmediately) {
