@@ -13,7 +13,6 @@ import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.UserHandle;
 import android.service.notification.StatusBarNotification;
-import android.view.WindowInsetsController;
 
 public class HiddenApiBridge {
     public static Context StatusBarNotification_getPackageContext(@NonNull StatusBarNotification sbn, @NonNull Context systenUiContext) {
@@ -84,10 +83,6 @@ public class HiddenApiBridge {
     public static Context Context_createApplicationContext(Context context, ApplicationInfo application,
                                                            int flags) {
         return context.createApplicationContext(application, flags);
-    }
-
-    public static void WindowInsetsController_setCaptionInsetsHeight(WindowInsetsController controller, int height) {
-        controller.setCaptionInsetsHeight(height);
     }
 
     public static void OverlayManager_setEnabled(OverlayManager overlayManager, @NonNull final String packageName, final boolean enable,

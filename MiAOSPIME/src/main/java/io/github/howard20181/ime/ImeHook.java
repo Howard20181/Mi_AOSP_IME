@@ -176,14 +176,12 @@ public class ImeHook extends XposedModule {
         prefs.registerOnSharedPreferenceChangeListener((sharedPreferences, key) -> {
             if ("nav_bar_layout_handle".equals(key)) {
                 config_navBarLayoutHandle.set(sharedPreferences.getString(key, ""));
-                module.log(Log.INFO, TAG, "nav_bar_layout_handle changed to " + config_navBarLayoutHandle.get());
             }
         });
         hook(methodInflateLayout).intercept(chain -> {
             if (chain.getArgs().get(0) instanceof String && !config_navBarLayoutHandle.get().isBlank()) {
                 var args = chain.getArgs().toArray();
                 args[0] = config_navBarLayoutHandle.get();
-                module.log(Log.INFO, TAG, "Inflating layout: " + args[0]);
                 return chain.proceed(args);
             }
             return chain.proceed();
