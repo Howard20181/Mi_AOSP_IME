@@ -289,14 +289,18 @@ public class ImeHook extends XposedModule {
                             var isGesturesNav = Settings.Secure.getInt(mContext.getContentResolver(), "navigation_mode", 2) == 2;
                             var canImeDrawsImeNavBar = isGesturesNav && getInvoker(methodIsCustomizedInputMethod).invoke(InputMethodManagerServiceImpl,
                                     getSelectedInputMethod.invoke(mSettings)) instanceof Boolean isCustomizedInputMethod && !isCustomizedInputMethod;
-                            if (mContext.getSystemService(Context.OVERLAY_SERVICE) instanceof OverlayManager overlayManager) {
-                                var overlayInfo = HiddenApiBridge.OverlayManager_getOverlayInfo(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, HiddenApiBridge.UserHandle_CURRENT());
-                                if (overlayInfo != null) {
-                                    var enabled = HiddenApiBridge.OverlayInfo_isEnabled(overlayInfo);
-                                    if (enabled != canImeDrawsImeNavBar) {
-                                        HiddenApiBridge.OverlayManager_setEnabled(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, canImeDrawsImeNavBar, HiddenApiBridge.UserHandle_CURRENT());
+                            try {
+                                if (mContext.getSystemService(Context.OVERLAY_SERVICE) instanceof OverlayManager overlayManager) {
+                                    var overlayInfo = HiddenApiBridge.OverlayManager_getOverlayInfo(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, HiddenApiBridge.UserHandle_CURRENT());
+                                    if (overlayInfo != null) {
+                                        var enabled = HiddenApiBridge.OverlayInfo_isEnabled(overlayInfo);
+                                        if (enabled != canImeDrawsImeNavBar) {
+                                            HiddenApiBridge.OverlayManager_setEnabled(overlayManager, NAV_BAR_MODE_GESTURAL_OVERLAY, canImeDrawsImeNavBar, HiddenApiBridge.UserHandle_CURRENT());
+                                        }
                                     }
                                 }
+                            } catch (SecurityException | IllegalStateException e) {
+                                log(Log.ERROR, TAG, "Failed to toggle gestural nav overlay", e);
                             }
                             mImeDrawsImeNavBar.set(canImeDrawsImeNavBar);
                         }
