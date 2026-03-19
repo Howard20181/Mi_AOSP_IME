@@ -4,7 +4,7 @@ public final class UserHandle {
     public static final UserHandle CURRENT = null;
 
     public UserHandle(int h) {
-        throw new RuntimeException("STUB");
+        throw new UnsupportedOperationException("STUB");
     }
 
     public int getIdentifier() {
