@@ -12,7 +12,6 @@ import androidx.annotation.Nullable;
 import io.github.libxposed.service.XposedService;
 
 public class SettingsActivity extends Activity {
-    private static XposedService mService = null;
     public static final String BACK = "back";
     public static final String HOME_HANDLE = "home_handle";
     public static final String IME_SWITCHER = "ime_switcher";
