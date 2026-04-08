@@ -79,7 +79,7 @@ base {
     archivesName = project.name + "-" + android.defaultConfig.versionName + "." + android.defaultConfig.versionCode
 }
 dependencies {
-    implementation "androidx.annotation:annotation:1.9.1"
+    implementation "androidx.annotation:annotation:1.10.0"
     compileOnly 'io.github.libxposed:api:101.0.0'
     compileOnly project(":hiddenapi:stubs")
     implementation project(":hiddenapi:bridge")
