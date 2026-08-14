@@ -3,12 +3,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 36
+    compileSdkVersion 37
 
     defaultConfig {
         applicationId namespace
         minSdkVersion 34
-        targetSdkVersion 36
+        targetSdkVersion 37
         versionCode rootProject.ext.commitCount
         versionName "1.2.0"
     }
@@ -79,25 +79,23 @@ base {
     archivesName = project.name + "-" + android.defaultConfig.versionName + "." + android.defaultConfig.versionCode
 }
 dependencies {
-    implementation "androidx.annotation:annotation:1.9.1"
-    compileOnly 'io.github.libxposed:api:101.0.0'
+    implementation "androidx.annotation:annotation:1.10.0"
+    compileOnly 'io.github.libxposed:api:102.0.0'
     compileOnly project(":hiddenapi:stubs")
     implementation project(":hiddenapi:bridge")
-    implementation 'io.github.libxposed:service:101.0.0'
+    implementation 'io.github.libxposed:service:102.0.0'
 }
 
-tasks.register('applyXposedDebug', Exec) {
+tasks.register('applyXposedDebug') {
     group "xposed"
     dependsOn "installDebug"
-    commandLine "adb", "shell", "svc", "power", "reboot"
-    ignoreExitValue = true
+    description "Install the debug APK and let LSPosed API 102 hot reload the module."
 }
 
-tasks.register('applyXposedRelease', Exec) {
+tasks.register('applyXposedRelease') {
     group "xposed"
     dependsOn "installRelease"
-    commandLine "adb", "shell", "svc", "power", "reboot"
-    ignoreExitValue = true
+    description "Install the release APK and let LSPosed API 102 hot reload the module."
 }
 
 tasks.register('applyXposedImeDebug', Exec) {
